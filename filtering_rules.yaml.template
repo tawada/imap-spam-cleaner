@@ -1,0 +1,6 @@
+- action: allow
+  sender_top_level_domain: .ac.jp
+- action: deny
+  body_contains: invoice
+- action: deny
+  subject_contains: invoice
