@@ -29,14 +29,11 @@ def main():
         if not email_data:
             continue
         for rule in rules:
-            if not src.rules.match_rule(rule, email_data):
-                continue
-            print(f"ルールにマッチしました: {rule}")
-            if rule.action == "allow":
+            if src.rules.match_rule(rule, email_data):
+                print(f"ルールにマッチしました: {rule}")
+                if rule.action == "deny":
+                    delete_email_ids.append(email_id)
                 break
-            if rule.action == "deny":
-                delete_email_ids.append(email_id)
-                continue
 
     print(f"削除対象のメールID: {delete_email_ids}")
 
