@@ -107,3 +107,50 @@ def delete_emails(mail_client, email_ids):
         print(f"{len(email_ids)}件のメールを削除しました。")
     except Exception as e:
         print(f"メール削除エラー: {e}")
+
+
+def move_emails_to_spam(mail_client, message_ids, archive_folder="Spam"):
+    """指定したメールをスパムフォルダに移動する"""
+    
+    if not message_ids:
+        print("移動するメールがありません")
+        return 0
+    
+    moved_count = 0
+    
+    try:
+        total = len(message_ids)
+        
+        for i, msg_id in enumerate(message_ids):
+            # 進捗表示
+            if (i+1) % 10 == 0 or i+1 == total:
+                print(f"処理中... {i+1}/{total}")
+            
+            # メールを指定フォルダに移動
+            if _move_email_to_folder(mail_client, msg_id, archive_folder):
+                moved_count += 1
+        
+        print(f"{moved_count}件のメールを '{archive_folder}' に移動しました")
+        return moved_count
+    except Exception as e:
+        print(f"メール移動エラー: {e}")
+        return 0
+
+
+def _move_email_to_folder(mail_client, msg_id, folder_name):
+    """メールを指定したフォルダに移動する"""
+    try:
+        # メールを指定フォルダにコピー
+        status, response = mail_client.copy(msg_id, folder_name)
+        
+        if status != "OK":
+            print(f"メールコピーエラー: メッセージID {msg_id}, レスポンス: {response}")
+            return False
+        
+        # 元のメールに削除フラグを設定
+        mail_client.store(msg_id, '+FLAGS', '\\Deleted')
+        mail_client.expunge()
+        return True
+    except Exception as e:
+        print(f"メール移動エラー: {e}")
+        return False

@@ -37,8 +37,8 @@ def main():
 
     print(f"削除対象のメールID: {delete_email_ids}")
 
-    # メールを削除
-    src.emails.delete_emails(email_client, delete_email_ids)
+    # メールをSpamフォルダに移動
+    src.emails.move_emails_to_spam(email_client, delete_email_ids)
 
     email_client.logout()
 
