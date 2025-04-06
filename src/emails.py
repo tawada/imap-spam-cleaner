@@ -129,7 +129,8 @@ def move_emails_to_spam(mail_client, message_ids, archive_folder="Spam"):
             # メールを指定フォルダに移動
             if _move_email_to_folder(mail_client, msg_id, archive_folder):
                 moved_count += 1
-        
+
+        mail_client.expunge()
         print(f"{moved_count}件のメールを '{archive_folder}' に移動しました")
         return moved_count
     except Exception as e:
@@ -149,7 +150,6 @@ def _move_email_to_folder(mail_client, msg_id, folder_name):
         
         # 元のメールに削除フラグを設定
         mail_client.store(msg_id, '+FLAGS', '\\Deleted')
-        mail_client.expunge()
         return True
     except Exception as e:
         print(f"メール移動エラー: {e}")
