@@ -31,7 +31,6 @@ def match_rule(rule: Rule, email_data: dict) -> bool:
 
     if rule.sender_name:
         sender_name = export_sender_name(email_data["from"])
-        print(f"Sender name: {sender_name}")
         if rule.sender_name not in sender_name:
             return False
 
@@ -72,4 +71,8 @@ def export_sender_name(sender: str) -> str:
         decoded_strings.append(decoded_string)
     # デコードされた文字列を結合して返す
     decoded_sender = "".join(decoded_strings)
+
+    if not decoded_sender:
+        decoded_sender = sender.split(" ")[0].strip()
+
     return decoded_sender
