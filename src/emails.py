@@ -74,7 +74,7 @@ def get_email_details(email_client, msg_id):
         subject = decode_header(msg["Subject"])
         if subject[0][1] is not None:
             # エンコーディングが指定されている場合はデコード
-            subject = subject[0][0].decode(subject[0][1])
+            subject = subject[0][0].decode(subject[0][1], errors='ignore')
         else:
             # エンコーディングが指定されていない場合はそのまま
             subject = subject[0][0]
