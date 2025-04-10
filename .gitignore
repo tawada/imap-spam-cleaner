@@ -173,6 +173,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+email_account.yaml
 filtering_rules.yaml
 *.Identifier
 Pipfile

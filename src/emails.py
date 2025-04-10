@@ -1,28 +1,33 @@
-import imaplib
-from pydantic import ConfigDict, SecretStr
-from pydantic_settings import BaseSettings
 import email
+import imaplib
+import pydantic
+import yaml
+
 from email.header import decode_header
+from pydantic import SecretStr
 
 
-class Settings(BaseSettings):
+class EmailAccount(pydantic.BaseModel):
     imap_server: str
     email: str
     password: SecretStr
- 
-    model_config = ConfigDict(
-        env_file=".env",
-        extra="ignore",
-    )
 
 
-def load_email_account():
-    return Settings()
+def load_email_account(setting_dir: str) -> EmailAccount:
+    path = f"settings/{setting_dir}/email_account.yaml"
+    with open(path, "r") as f:
+        email_account_dict = yaml.safe_load(f)
+    print(f"メールアカウント設定: {email_account_dict}")
+    return EmailAccount(**email_account_dict)
 
 
-def connect_to_imap_server(server, username, password, folder="INBOX"):
+def connect_to_imap_server(email_account: EmailAccount, folder="INBOX"):
     """IMAPサーバーに接続してログインする"""
     try:
+        server = email_account.imap_server
+        username = email_account.email
+        password = email_account.password.get_secret_value()
+
         # IMAPサーバーに接続
         mail = imaplib.IMAP4_SSL(server)
         

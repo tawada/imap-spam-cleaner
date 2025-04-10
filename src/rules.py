@@ -13,8 +13,9 @@ class Rule(pydantic.BaseModel):
     subject_contains: str | None = None
 
 
-def load_rules(path: str) -> list[Rule]:
+def load_rules(setting_dir: str) -> list[Rule]:
     """Load rules from a YAML file."""
+    path = f"settings/{setting_dir}/filtering_rules.yaml"
     with open(path, "r") as f:
         rules = yaml.safe_load(f)
     return [Rule(**rule) for rule in rules]
