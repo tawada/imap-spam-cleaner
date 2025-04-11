@@ -12,19 +12,20 @@ def main():
         email_account = src.emails.load_email_account(setting_dir)
         rules = src.rules.load_rules(setting_dir)
 
-        email_client = src.emails.connect_to_imap_server(email_account)
-        if email_client is None:
+        email_client = src.emails.EmailClient.from_email_account(email_account)
+        ret = email_client.connect_to_server()
+        if not ret:
             print("メールサーバーに接続できませんでした。")
             continue
 
-        emails = src.emails.get_emails(email_client)
+        emails = email_client.get_emails()
 
         # 削除するべきメールのリスト
         delete_email_ids = []
 
         # フィルタリングルールを適用して削除するメールを特定
         for email_id in emails:
-            email_data = src.emails.get_email_details(email_client, email_id)
+            email_data = email_client.get_email_details(email_id)
             if not email_data:
                 continue
             for rule in rules:
@@ -37,7 +38,7 @@ def main():
         print(f"削除対象のメールID: {delete_email_ids}")
 
         # メールをSpamフォルダに移動
-        src.emails.move_emails_to_spam(email_client, delete_email_ids)
+        email_client.move_emails_to_spam(delete_email_ids)
 
         email_client.logout()
 
