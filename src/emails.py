@@ -248,8 +248,8 @@ class EmailClientPOP3(EmailClient):
                     print(f"処理中... {i+1}/{total}")
                 
                 # メールを指定フォルダに移動
-                if _move_email_to_folder(self.email_client, msg_id, archive_folder):
-                    moved_count += 1
+                # if _move_email_to_folder(self.email_client, msg_id, archive_folder):
+                    # moved_count += 1
 
             print(f"{moved_count}件のメールを '{archive_folder}' に移動しました")
             return moved_count
