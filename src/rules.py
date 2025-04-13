@@ -15,9 +15,16 @@ class Rule(pydantic.BaseModel):
 
 def load_rules(setting_dir: str) -> list[Rule]:
     """Load rules from a YAML file."""
-    path = f"settings/{setting_dir}/filtering_rules.yaml"
-    with open(path, "r") as f:
-        rules = yaml.safe_load(f)
+    path_template = "settings/{setting_dir}/filtering_rules.yaml"
+    path = path_template.format(setting_dir=setting_dir)
+    try:
+        with open(path, "r") as f:
+            rules = yaml.safe_load(f)
+    except FileNotFoundError:
+        # デフォルトの設定を使用
+        path = path_template.format(setting_dir="default")
+        with open(path, "r") as f:
+            rules = yaml.safe_load(f)
     return [Rule(**rule) for rule in rules]
 
 
