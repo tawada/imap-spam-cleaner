@@ -1,3 +1,4 @@
+import datetime
 import email
 import imaplib
 import poplib
@@ -65,7 +66,9 @@ class EmailClientIMAP(EmailClient):
         """メールを検索してメールIDのリストを取得する"""
         try:
             # メールを検索
-            result, data = self.email_client.search(None, "ALL")
+            # 24時間以内に受信したメールを取得
+            since_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d-%b-%Y")
+            result, data = self.email_client.search(None, f'(SINCE "{since_date}")')
             
             if result != 'OK':
                 print("メールの検索に失敗しました。")
