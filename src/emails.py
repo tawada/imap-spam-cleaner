@@ -85,7 +85,7 @@ class EmailClientIMAP(EmailClient):
     def get_email_details(self, msg_id):
         """メールの詳細情報を取得する"""
         try:
-            status, msg_data = self.email_client.fetch(msg_id, "(RFC822)")
+            status, msg_data = self.email_client.fetch(msg_id, "(BODY.PEEK[])")
             
             if status != "OK":
                 print(f"メール取得エラー: メッセージID {msg_id}")
