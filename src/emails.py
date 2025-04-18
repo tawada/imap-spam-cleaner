@@ -31,7 +31,10 @@ class EmailClient:
     def get_email_details(self, msg_id):
         ...
 
-    def move_emails_to_spam(self, message_ids, archive_folder="Spam"):
+    def move_emails_to_folder(self, message_ids, folder):
+        ...
+
+    def delete_emails(self, message_ids):
         ...
 
     def logout(self):
@@ -122,16 +125,26 @@ class EmailClientIMAP(EmailClient):
             print(f"メール解析エラー: {e}")
             return None
 
-    def move_emails_to_spam(self, message_ids, archive_folder="Spam"):
-        """指定したメールをスパムフォルダに移動する"""
+    def move_emails_to_folder(self, message_ids, folder) -> list[int]:
+        """指定したメールを指定フォルダに移動する"""
         
         if not message_ids:
             print("移動するメールがありません")
-            return 0
+            return []
         
-        moved_count = 0
-        
+        ret = []
         try:
+            status, folders = self.email_client.list()
+            print(f"フォルダ一覧: {folders}")
+            if status != 'OK':
+                print("フォルダの取得に失敗しました。")
+                return []
+            
+            decoded_folders = [f.decode().split(' "/" ')[-1] for f in folders]
+            if folder not in decoded_folders:
+                print(f"フォルダ '{folder}' は存在しません。新規作成します。")
+                self.email_client.create(folder)
+
             total = len(message_ids)
             
             for i, msg_id in enumerate(message_ids):
@@ -140,14 +153,32 @@ class EmailClientIMAP(EmailClient):
                     print(f"処理中... {i+1}/{total}")
                 
                 # メールを指定フォルダに移動
-                if _move_email_to_folder(self.email_client, msg_id, archive_folder):
-                    moved_count += 1
+                if _move_email_to_folder(self.email_client, msg_id, folder):
+                    ret.append(msg_id)
 
-            self.email_client.expunge()
-            print(f"{moved_count}件のメールを '{archive_folder}' に移動しました")
-            return moved_count
+            print(f"{len(ret)}件のメールを '{folder}' に移動しました")
+            return ret
         except Exception as e:
             print(f"メール移動エラー: {e}")
+            return ret
+
+    def delete_emails(self, message_ids):
+        """指定したメールを削除する"""
+        if not message_ids:
+            print("削除するメールがありません")
+            return 0
+
+        try:
+            for msg_id in message_ids:
+                # メールに削除フラグを設定
+                self.email_client.store(msg_id, '+FLAGS', '\\Deleted')
+            
+            # 削除フラグが設定されたメールを完全に削除
+            self.email_client.expunge()
+            print(f"{len(message_ids)}件のメールを削除しました")
+            return len(message_ids)
+        except Exception as e:
+            print(f"メール削除エラー: {e}")
             return 0
 
     def logout(self):
@@ -233,7 +264,7 @@ class EmailClientPOP3(EmailClient):
             print(f"メール解析エラー: {e}")
             return None
 
-    def move_emails_to_spam(self, message_ids, archive_folder="Spam"):
+    def move_emails_to_folder(self, message_ids, archive_folder="Spam"):
         """指定したメールをスパムフォルダに移動する"""
         
         if not message_ids:
@@ -258,6 +289,23 @@ class EmailClientPOP3(EmailClient):
             return moved_count
         except Exception as e:
             print(f"メール移動エラー: {e}")
+            return 0
+
+    def delete_emails(self, message_ids):
+        """指定したメールを削除する"""
+        if not message_ids:
+            print("削除するメールがありません")
+            return 0
+
+        try:
+            for msg_id in message_ids:
+                # メールを削除
+                self.email_client.dele(msg_id)
+            
+            print(f"{len(message_ids)}件のメールを削除しました")
+            return len(message_ids)
+        except Exception as e:
+            print(f"メール削除エラー: {e}")
             return 0
 
     def logout(self):

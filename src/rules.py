@@ -6,11 +6,17 @@ from typing import Literal
 
 class Rule(pydantic.BaseModel):
     """Email filtering rule."""
-    action: Literal["allow", "deny"]
+    action: Literal["allow", "deny", "move"]
+    move_to: str | None = None
     sender_top_level_domain: str | None = None
     sender_name: str | None = None
     body_contains: str | None = None
     subject_contains: str | None = None
+
+    def validate(self) -> None:
+        """Validate the rule."""
+        if self.action == "move" and not self.move_to:
+            raise ValueError("move_to must be specified when action is 'move'")
 
     def __str__(self) -> str:
         """String representation of the rule."""
@@ -93,6 +99,6 @@ def export_sender_name(sender: str) -> str:
     decoded_sender = "".join(decoded_strings)
 
     if not decoded_sender:
-        decoded_sender = sender.split(" ")[0].strip()
+        decoded_sender = sender.split(" <")[0].strip()
 
     return decoded_sender
