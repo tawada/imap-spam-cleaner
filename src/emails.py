@@ -2,11 +2,11 @@ import datetime
 import email
 import imaplib
 import poplib
+from email.header import decode_header
+from typing import Literal
+
 import pydantic
 import yaml
-
-from typing import Literal
-from email.header import decode_header
 from pydantic import SecretStr
 
 
@@ -22,23 +22,17 @@ class EmailClient:
         self.email_account = email_account
         self.email_client = None
 
-    def connect_to_server(self):
-        ...
+    def connect_to_server(self): ...
 
-    def get_emails(self):
-        ...
+    def get_emails(self): ...
 
-    def get_email_details(self, msg_id):
-        ...
+    def get_email_details(self, msg_id): ...
 
-    def move_emails_to_folder(self, message_ids, folder):
-        ...
+    def move_emails_to_folder(self, message_ids, folder): ...
 
-    def delete_emails(self, message_ids):
-        ...
+    def delete_emails(self, message_ids): ...
 
-    def logout(self):
-        ...
+    def logout(self): ...
 
 
 class EmailClientIMAP(EmailClient):
@@ -70,16 +64,18 @@ class EmailClientIMAP(EmailClient):
         try:
             # メールを検索
             # 24時間以内に受信したメールを取得
-            since_date = (datetime.datetime.now() - datetime.timedelta(days=1)).strftime("%d-%b-%Y")
+            since_date = (
+                datetime.datetime.now() - datetime.timedelta(days=1)
+            ).strftime("%d-%b-%Y")
             result, data = self.email_client.search(None, f'(SINCE "{since_date}")')
-            
-            if result != 'OK':
+
+            if result != "OK":
                 print("メールの検索に失敗しました。")
                 return []
-            
+
             # メールIDのリストを取得
             email_ids = data[0].split()
-            
+
             return email_ids
         except Exception as e:
             print(f"メールの取得エラー: {e}")
@@ -89,11 +85,11 @@ class EmailClientIMAP(EmailClient):
         """メールの詳細情報を取得する"""
         try:
             status, msg_data = self.email_client.fetch(msg_id, "(BODY.PEEK[])")
-            
+
             if status != "OK":
                 print(f"メール取得エラー: メッセージID {msg_id}")
                 return None
-            
+
             # メールの内容を解析
             raw_email = msg_data[0][1]
             msg = email.message_from_bytes(raw_email)
@@ -102,16 +98,16 @@ class EmailClientIMAP(EmailClient):
             subject = decode_header(msg["Subject"])
             if subject[0][1] is not None:
                 # エンコーディングが指定されている場合はデコード
-                subject = subject[0][0].decode(subject[0][1], errors='ignore')
+                subject = subject[0][0].decode(subject[0][1], errors="ignore")
             else:
                 # エンコーディングが指定されていない場合はそのまま
                 subject = subject[0][0]
                 if isinstance(subject, bytes):
-                    subject = subject.decode('utf-8', errors='ignore')
-            
+                    subject = subject.decode("utf-8", errors="ignore")
+
             # 送信者を取得
             sender = msg.get("From", "")
-            
+
             # 日付を取得
             date = msg.get("Date", "")
 
@@ -127,31 +123,31 @@ class EmailClientIMAP(EmailClient):
 
     def move_emails_to_folder(self, message_ids, folder) -> list[int]:
         """指定したメールを指定フォルダに移動する"""
-        
+
         if not message_ids:
             print("移動するメールがありません")
             return []
-        
+
         ret = []
         try:
             status, folders = self.email_client.list()
             print(f"フォルダ一覧: {folders}")
-            if status != 'OK':
+            if status != "OK":
                 print("フォルダの取得に失敗しました。")
                 return []
-            
+
             decoded_folders = [f.decode().split(' "/" ')[-1] for f in folders]
             if folder not in decoded_folders:
                 print(f"フォルダ '{folder}' は存在しません。新規作成します。")
                 self.email_client.create(folder)
 
             total = len(message_ids)
-            
+
             for i, msg_id in enumerate(message_ids):
                 # 進捗表示
-                if (i+1) % 10 == 0 or i+1 == total:
+                if (i + 1) % 10 == 0 or i + 1 == total:
                     print(f"処理中... {i+1}/{total}")
-                
+
                 # メールを指定フォルダに移動
                 if _move_email_to_folder(self.email_client, msg_id, folder):
                     ret.append(msg_id)
@@ -171,8 +167,8 @@ class EmailClientIMAP(EmailClient):
         try:
             for msg_id in message_ids:
                 # メールに削除フラグを設定
-                self.email_client.store(msg_id, '+FLAGS', '\\Deleted')
-            
+                self.email_client.store(msg_id, "+FLAGS", "\\Deleted")
+
             # 削除フラグが設定されたメールを完全に削除
             self.email_client.expunge()
             print(f"{len(message_ids)}件のメールを削除しました")
@@ -218,10 +214,10 @@ class EmailClientPOP3(EmailClient):
         try:
             # メールのリストを取得
             num_messages = len(self.email_client.list()[1])
-            
+
             # メールIDのリストを生成
-            email_ids = [str(i+1) for i in range(num_messages)]
-            
+            email_ids = [str(i + 1) for i in range(num_messages)]
+
             return email_ids
         except Exception as e:
             print(f"メールの取得エラー: {e}")
@@ -232,7 +228,7 @@ class EmailClientPOP3(EmailClient):
         try:
             # メールを取得
             msg_data = self.email_client.retr(msg_id)[1]
-            
+
             # メールの内容を解析
             raw_email = b"\n".join(msg_data)
             msg = email.message_from_bytes(raw_email)
@@ -241,16 +237,16 @@ class EmailClientPOP3(EmailClient):
             subject = decode_header(msg["Subject"])
             if subject[0][1] is not None:
                 # エンコーディングが指定されている場合はデコード
-                subject = subject[0][0].decode(subject[0][1], errors='ignore')
+                subject = subject[0][0].decode(subject[0][1], errors="ignore")
             else:
                 # エンコーディングが指定されていない場合はそのまま
                 subject = subject[0][0]
                 if isinstance(subject, bytes):
-                    subject = subject.decode('utf-8', errors='ignore')
-            
+                    subject = subject.decode("utf-8", errors="ignore")
+
             # 送信者を取得
             sender = msg.get("From", "")
-            
+
             # 日付を取得
             date = msg.get("Date", "")
 
@@ -266,24 +262,24 @@ class EmailClientPOP3(EmailClient):
 
     def move_emails_to_folder(self, message_ids, archive_folder="Spam"):
         """指定したメールをスパムフォルダに移動する"""
-        
+
         if not message_ids:
             print("移動するメールがありません")
             return 0
-        
+
         moved_count = 0
-        
+
         try:
             total = len(message_ids)
-            
+
             for i, msg_id in enumerate(message_ids):
                 # 進捗表示
-                if (i+1) % 10 == 0 or i+1 == total:
+                if (i + 1) % 10 == 0 or i + 1 == total:
                     print(f"処理中... {i+1}/{total}")
-                
+
                 # メールを指定フォルダに移動
                 # if _move_email_to_folder(self.email_client, msg_id, archive_folder):
-                    # moved_count += 1
+                # moved_count += 1
 
             print(f"{moved_count}件のメールを '{archive_folder}' に移動しました")
             return moved_count
@@ -301,7 +297,7 @@ class EmailClientPOP3(EmailClient):
             for msg_id in message_ids:
                 # メールを削除
                 self.email_client.dele(msg_id)
-            
+
             print(f"{len(message_ids)}件のメールを削除しました")
             return len(message_ids)
         except Exception as e:
@@ -317,7 +313,12 @@ class EmailClientPOP3(EmailClient):
         except Exception as e:
             print(f"ログアウトエラー: {e}")
 
-setattr(EmailClient, "from_email_account", lambda ea: EmailClientIMAP(ea) if ea.protocol == "IMAP" else EmailClientPOP3(ea))
+
+setattr(
+    EmailClient,
+    "from_email_account",
+    lambda ea: EmailClientIMAP(ea) if ea.protocol == "IMAP" else EmailClientPOP3(ea),
+)
 
 
 def load_email_account(setting_dir: str) -> EmailAccount:
@@ -333,13 +334,13 @@ def _move_email_to_folder(email_client, msg_id, folder_name):
     try:
         # メールを指定フォルダにコピー
         status, response = email_client.copy(msg_id, folder_name)
-        
+
         if status != "OK":
             print(f"メールコピーエラー: メッセージID {msg_id}, レスポンス: {response}")
             return False
-        
+
         # 元のメールに削除フラグを設定
-        email_client.store(msg_id, '+FLAGS', '\\Deleted')
+        email_client.store(msg_id, "+FLAGS", "\\Deleted")
         return True
     except Exception as e:
         print(f"メール移動エラー: {e}")

@@ -1,11 +1,13 @@
 import re
-import yaml
-import pydantic
 from typing import Literal
+
+import pydantic
+import yaml
 
 
 class Rule(pydantic.BaseModel):
     """Email filtering rule."""
+
     action: Literal["allow", "deny", "move"]
     move_to: str | None = None
     sender_top_level_domain: str | None = None
@@ -60,7 +62,9 @@ def match_rule(rule: Rule, email_data: dict) -> bool:
         if rule.sender_name not in sender_name:
             return False
 
-    if rule.subject_contains and rule.subject_contains not in email_data.get("subject", ""):
+    if rule.subject_contains and rule.subject_contains not in email_data.get(
+        "subject", ""
+    ):
         return False
 
     if rule.body_contains:

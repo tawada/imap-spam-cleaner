@@ -55,6 +55,5 @@ def main():
         email_client.logout()
 
 
-
 if __name__ == "__main__":
     main()
