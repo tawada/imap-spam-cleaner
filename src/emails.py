@@ -136,7 +136,7 @@ class EmailClientIMAP(EmailClient):
                 print("フォルダの取得に失敗しました。")
                 return []
 
-            decoded_folders = [f.decode().split(' "/" ')[-1] for f in folders]
+            decoded_folders = [f.decode().split(' "." ')[-1] for f in folders]
             if folder not in decoded_folders:
                 print(f"フォルダ '{folder}' は存在しません。新規作成します。")
                 self.email_client.create(folder)
