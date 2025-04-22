@@ -131,7 +131,6 @@ class EmailClientIMAP(EmailClient):
         ret = []
         try:
             status, folders = self.email_client.list()
-            print(f"フォルダ一覧: {folders}")
             if status != "OK":
                 print("フォルダの取得に失敗しました。")
                 return []
