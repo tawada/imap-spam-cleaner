@@ -7,8 +7,6 @@ def main():
     setting_dirs = src.settings.get_setting_dirs()
 
     for setting_dir in setting_dirs:
-        if setting_dir == "default":
-            continue
         email_account = src.emails.load_email_account(setting_dir)
         rules = src.rules.load_rules(setting_dir)
 
