@@ -11,9 +11,9 @@ class Rule(pydantic.BaseModel):
     action: Literal["allow", "deny", "move"]
     move_to: str | None = None
     sender_top_level_domain: str | None = None
-    sender_name: str | None = None
+    sender_name: list[str] | str | None = None
     body_contains: str | None = None
-    subject_contains: str | None = None
+    subject_contains: list[str] | str | None = None
 
     def validate(self) -> None:
         """Validate the rule."""
@@ -59,19 +59,27 @@ def match_rule(rule: Rule, email_data: dict) -> bool:
 
     if rule.sender_name:
         sender_name = export_sender_name(email_data["from"])
-        if rule.sender_name not in sender_name:
+        if not contains_all_words(sender_name, rule.sender_name):
             return False
 
-    if rule.subject_contains and rule.subject_contains not in email_data.get(
-        "subject", ""
-    ):
-        return False
+    if rule.subject_contains:
+        subject = email_data.get("subject", "")
+        if not contains_all_words(subject, rule.subject_contains):
+            return False
 
     if rule.body_contains:
         # 未実装
         return False
 
     return True
+
+
+def contains_all_words(base_str: str, words: list[str] | str):
+    """The string contains all words."""
+    if isinstance(words, str):
+        words = [words]
+
+    return all(word in base_str for word in words)    
 
 
 def decode_mime_words(s: str) -> str:
