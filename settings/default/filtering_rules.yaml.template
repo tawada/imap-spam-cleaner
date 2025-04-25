@@ -4,3 +4,6 @@
   body_contains: invoice
 - action: deny
   subject_contains: invoice
+- action: move
+  move_to: sub
+  subject_contains: invoice
