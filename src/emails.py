@@ -7,6 +7,7 @@ from typing import Literal
 
 import pydantic
 import yaml
+from loguru import logger
 from pydantic import SecretStr
 
 
@@ -52,10 +53,10 @@ class EmailClientIMAP(EmailClient):
             # メールボックスを選択（デフォルトはINBOX）
             self.email_client.select("INBOX")
 
-            print(f"接続成功: {server}")
+            logger.debug(f"接続成功: {server}")
             return True
         except Exception as e:
-            print(f"接続エラー: {e}")
+            logger.debug(f"接続エラー: {e}")
             self.email_client = None
             return False
 
@@ -70,7 +71,7 @@ class EmailClientIMAP(EmailClient):
             result, data = self.email_client.search(None, f'(SINCE "{since_date}")')
 
             if result != "OK":
-                print("メールの検索に失敗しました。")
+                logger.debug("メールの検索に失敗しました。")
                 return []
 
             # メールIDのリストを取得
@@ -78,7 +79,7 @@ class EmailClientIMAP(EmailClient):
 
             return email_ids
         except Exception as e:
-            print(f"メールの取得エラー: {e}")
+            logger.debug(f"メールの取得エラー: {e}")
             return []
 
     def get_email_details(self, msg_id):
@@ -87,7 +88,7 @@ class EmailClientIMAP(EmailClient):
             status, msg_data = self.email_client.fetch(msg_id, "(BODY.PEEK[])")
 
             if status != "OK":
-                print(f"メール取得エラー: メッセージID {msg_id}")
+                logger.debug(f"メール取得エラー: メッセージID {msg_id}")
                 return None
 
             # メールの内容を解析
@@ -118,26 +119,26 @@ class EmailClientIMAP(EmailClient):
                 "date": date,
             }
         except Exception as e:
-            print(f"メール解析エラー: {e}")
+            logger.debug(f"メール解析エラー: {e}")
             return None
 
     def move_emails_to_folder(self, message_ids, folder) -> list[int]:
         """指定したメールを指定フォルダに移動する"""
 
         if not message_ids:
-            print("移動するメールがありません")
+            logger.debug("移動するメールがありません")
             return []
 
         ret = []
         try:
             status, folders = self.email_client.list()
             if status != "OK":
-                print("フォルダの取得に失敗しました。")
+                logger.debug("フォルダの取得に失敗しました。")
                 return []
 
             decoded_folders = [f.decode().split(' "." ')[-1] for f in folders]
             if folder not in decoded_folders:
-                print(f"フォルダ '{folder}' は存在しません。新規作成します。")
+                logger.debug(f"フォルダ '{folder}' は存在しません。新規作成します。")
                 self.email_client.create(folder)
 
             total = len(message_ids)
@@ -145,22 +146,22 @@ class EmailClientIMAP(EmailClient):
             for i, msg_id in enumerate(message_ids):
                 # 進捗表示
                 if (i + 1) % 10 == 0 or i + 1 == total:
-                    print(f"処理中... {i+1}/{total}")
+                    logger.debug(f"処理中... {i+1}/{total}")
 
                 # メールを指定フォルダに移動
                 if _move_email_to_folder(self.email_client, msg_id, folder):
                     ret.append(msg_id)
 
-            print(f"{len(ret)}件のメールを '{folder}' に移動しました")
+            logger.debug(f"{len(ret)}件のメールを '{folder}' に移動しました")
             return ret
         except Exception as e:
-            print(f"メール移動エラー: {e}")
+            logger.debug(f"メール移動エラー: {e}")
             return ret
 
     def delete_emails(self, message_ids):
         """指定したメールを削除する"""
         if not message_ids:
-            print("削除するメールがありません")
+            logger.debug("削除するメールがありません")
             return 0
 
         try:
@@ -170,10 +171,10 @@ class EmailClientIMAP(EmailClient):
 
             # 削除フラグが設定されたメールを完全に削除
             self.email_client.expunge()
-            print(f"{len(message_ids)}件のメールを削除しました")
+            logger.debug(f"{len(message_ids)}件のメールを削除しました")
             return len(message_ids)
         except Exception as e:
-            print(f"メール削除エラー: {e}")
+            logger.debug(f"メール削除エラー: {e}")
             return 0
 
     def logout(self):
@@ -181,9 +182,9 @@ class EmailClientIMAP(EmailClient):
         try:
             if self.email_client:
                 self.email_client.logout()
-                print("ログアウト成功")
+                logger.debug("ログアウト成功")
         except Exception as e:
-            print(f"ログアウトエラー: {e}")
+            logger.debug(f"ログアウトエラー: {e}")
 
 
 class EmailClientPOP3(EmailClient):
@@ -324,7 +325,6 @@ def load_email_account(setting_dir: str) -> EmailAccount:
     path = f"settings/{setting_dir}/email_account.yaml"
     with open(path, "r") as f:
         email_account_dict = yaml.safe_load(f)
-    print(f"メールアカウント設定: {email_account_dict}")
     return EmailAccount(**email_account_dict)
 
 
@@ -335,12 +335,12 @@ def _move_email_to_folder(email_client, msg_id, folder_name):
         status, response = email_client.copy(msg_id, folder_name)
 
         if status != "OK":
-            print(f"メールコピーエラー: メッセージID {msg_id}, レスポンス: {response}")
+            logger.debug(f"メールコピーエラー: メッセージID {msg_id}, レスポンス: {response}")
             return False
 
         # 元のメールに削除フラグを設定
         email_client.store(msg_id, "+FLAGS", "\\Deleted")
         return True
     except Exception as e:
-        print(f"メール移動エラー: {e}")
+        logger.debug(f"メール移動エラー: {e}")
         return False
