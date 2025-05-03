@@ -79,6 +79,10 @@ def contains_all_words(base_str: str, words: list[str] | str):
     if isinstance(words, str):
         words = [words]
 
+    # 大文字小文字を区別しないようにする
+    base_str = base_str.lower()
+    words = [word.lower() for word in words]
+
     return all(word in base_str for word in words)    
 
 
