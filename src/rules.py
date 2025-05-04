@@ -52,8 +52,7 @@ def match_rule(rule: Rule, email_data: dict) -> bool:
     """Check if the email matches the rule."""
 
     if rule.sender_top_level_domain:
-        # <hoge@fuga.com>の括弧の中を正規表現でマッチさせる
-        sender = email_data["from"].split("<")[-1].split(">")[0]
+        sender = export_sender(email_data["from"])
         if not sender.endswith(rule.sender_top_level_domain):
             return False
 
@@ -97,6 +96,12 @@ def decode_mime_words(s: str) -> str:
         if isinstance(word, bytes)
     )
     return decoded_string
+
+
+def export_sender(email: str) -> str:
+    """Export sender from email address."""
+    # <hoge@fuga.com>の括弧の中を正規表現でマッチさせる
+    return email.split("<")[-1].split(">")[0]
 
 
 def export_sender_name(sender: str) -> str:
