@@ -101,7 +101,14 @@ def decode_mime_words(s: str) -> str:
 def export_sender(email: str) -> str:
     """Export sender from email address."""
     # <hoge@fuga.com>の括弧の中を正規表現でマッチさせる
-    return email.split("<")[-1].split(">")[0]
+    pattern = re.compile(r"<([^>]+)>")
+    # マッチした部分を取得
+    match = pattern.search(email)
+    if match:
+        # マッチした部分を返す
+        return match.group(1)
+    # マッチしなかった場合はそのまま返す
+    return email
 
 
 def export_sender_name(sender: str) -> str:
