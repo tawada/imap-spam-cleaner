@@ -1,3 +1,4 @@
+import os
 import re
 from typing import Literal
 
@@ -37,14 +38,20 @@ def load_rules(setting_dir: str) -> list[Rule]:
     """Load rules from a YAML file."""
     path_template = "settings/{setting_dir}/filtering_rules.yaml"
     path = path_template.format(setting_dir=setting_dir)
-    try:
-        with open(path, "r") as f:
-            rules = yaml.safe_load(f)
-    except FileNotFoundError:
+    # settings/{setting_dir}/filtering_rules.yamlが存在するか確認
+    if not os.path.exists(path):
         # デフォルトの設定を使用
         path = path_template.format(setting_dir="default")
-        with open(path, "r") as f:
-            rules = yaml.safe_load(f)
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Settings file not found: {path}")
+
+    # settings/{setting_dir}/filtering_rules.yamlを読み込む
+    with open(path, "r") as f:
+        rules = yaml.safe_load(f)
+
+    # ルールを検証
+    for rule in rules:
+        Rule(**rule).validate()
     return [Rule(**rule) for rule in rules]
 
 
