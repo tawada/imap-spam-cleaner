@@ -97,11 +97,16 @@ def decode_mime_words(s: str) -> str:
     import email.header
 
     decoded_words = email.header.decode_header(s)
-    decoded_string = "".join(
-        str(word, encoding if isinstance(word, bytes) else "utf-8")
-        for word, encoding in decoded_words
-        if isinstance(word, bytes)
-    )
+    decoded_string = ""
+    for word, encoding in decoded_words:
+        if isinstance(word, bytes):
+            try:
+                decoded_string += word.decode(encoding or 'utf-8')
+            except (UnicodeDecodeError, LookupError):
+                # デコード失敗時は fallback に utf-8 を使い、エラーは無視
+                decoded_string += word.decode('utf-8', errors='replace')
+        else:
+            decoded_string += word
     return decoded_string
 
 
