@@ -68,7 +68,8 @@ class EmailClientIMAP(EmailClient):
             since_date = (
                 datetime.datetime.now() - datetime.timedelta(days=1)
             ).strftime("%d-%b-%Y")
-            result, data = self.email_client.search(None, f'(SINCE "{since_date}")')
+            result, data = self.email_client.search(
+                None, f'(SINCE "{since_date}")')
 
             if result != "OK":
                 logger.debug("メールの検索に失敗しました。")
@@ -317,7 +318,8 @@ class EmailClientPOP3(EmailClient):
 setattr(
     EmailClient,
     "from_email_account",
-    lambda ea: EmailClientIMAP(ea) if ea.protocol == "IMAP" else EmailClientPOP3(ea),
+    lambda ea: EmailClientIMAP(
+        ea) if ea.protocol == "IMAP" else EmailClientPOP3(ea),
 )
 
 

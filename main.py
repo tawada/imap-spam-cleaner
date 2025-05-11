@@ -36,17 +36,20 @@ def main():
                     logger.info(f"ルールにマッチしました: {rule}:{email_data['subject']}")
                     if rule.action == "deny":
                         folder = "Spam"
-                        move_folder_dict.setdefault(folder, []).append(email_id)
+                        move_folder_dict.setdefault(
+                            folder, []).append(email_id)
                     elif rule.action == "move":
                         folder = rule.move_to
-                        move_folder_dict.setdefault(folder, []).append(email_id)
+                        move_folder_dict.setdefault(
+                            folder, []).append(email_id)
                     break
 
         logger.info(f"移動フォルダ: {move_folder_dict}")
 
         # メールを指定フォルダに移動
         for folder, email_ids in move_folder_dict.items():
-            success_email_ids = email_client.move_emails_to_folder(email_ids, folder)
+            success_email_ids = email_client.move_emails_to_folder(
+                email_ids, folder)
             delete_email_ids.extend(success_email_ids)
 
         # コピーしたメールを削除
