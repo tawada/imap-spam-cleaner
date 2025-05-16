@@ -115,7 +115,7 @@ class EmailClientIMAP(EmailClient):
             date = msg.get("Date", "")
 
             # 結合文字列を除去
-            subject = remove_combining_characters(subject) 
+            subject = remove_combining_characters(subject)
             sender = remove_combining_characters(sender)
 
             return {
