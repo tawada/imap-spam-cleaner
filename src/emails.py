@@ -2,6 +2,7 @@ import datetime
 import email
 import imaplib
 import poplib
+import unicodedata
 from email.header import decode_header
 from typing import Literal
 
@@ -112,6 +113,10 @@ class EmailClientIMAP(EmailClient):
 
             # 日付を取得
             date = msg.get("Date", "")
+
+            # 結合文字列を除去
+            subject = remove_combining_characters(subject) 
+            sender = remove_combining_characters(sender)
 
             return {
                 "id": msg_id,
@@ -346,3 +351,11 @@ def _move_email_to_folder(email_client, msg_id, folder_name):
     except Exception as e:
         logger.debug(f"メール移動エラー: {e}")
         return False
+
+
+def remove_combining_characters(text):
+    """正規化で結合文字を分解し、結合文字でないものだけを返す"""
+    return ''.join(
+        char for char in unicodedata.normalize('NFD', text)
+        if not unicodedata.combining(char)
+    )
