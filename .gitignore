@@ -178,3 +178,4 @@ filtering_rules.yaml
 *.Identifier
 Pipfile
 Pipfile.lock
+logs/

@@ -1,3 +1,7 @@
+import logging
+from logging.handlers import RotatingFileHandler
+from pathlib import Path
+
 from loguru import logger
 
 import src.emails
@@ -5,8 +9,69 @@ import src.rules
 import src.settings
 
 
+def create_filter_decision_logger() -> logging.Logger | None:
+    log_path = Path("logs/filter_decisions.log")
+    try:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        decision_logger = logging.getLogger("filter_decisions")
+        if decision_logger.handlers:
+            return decision_logger
+
+        handler = RotatingFileHandler(
+            log_path,
+            maxBytes=1 * 1024 * 1024,
+            backupCount=3,
+            encoding="utf-8",
+        )
+        formatter = logging.Formatter(
+            "%(asctime)s | setting=%(setting_dir)s | email_id=%(email_id)s | to=%(to_folder)s | reason=%(reason)s | subject=%(subject)s"
+        )
+        handler.setFormatter(formatter)
+        decision_logger.addHandler(handler)
+        decision_logger.setLevel(logging.INFO)
+        decision_logger.propagate = False
+        return decision_logger
+    except Exception as e:
+        logger.warning(f"振り分けログの初期化に失敗しました: {e}")
+        return None
+
+
+def to_one_line(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (bytes, bytearray)):
+        value = value.decode("utf-8", errors="replace")
+    return str(value).replace("\n", " ").replace("\r", " ")
+
+
+def log_filter_decision(
+    decision_logger: logging.Logger | None,
+    setting_dir: str,
+    email_id,
+    folder: str,
+    rule: src.rules.Rule,
+    email_data: dict,
+) -> None:
+    if not decision_logger:
+        return
+    try:
+        decision_logger.info(
+            "matched",
+            extra={
+                "setting_dir": to_one_line(setting_dir),
+                "email_id": to_one_line(email_id),
+                "to_folder": to_one_line(folder),
+                "reason": to_one_line(rule),
+                "subject": to_one_line(email_data.get("subject", "")),
+            },
+        )
+    except Exception as e:
+        logger.warning(f"振り分けログの書き込みに失敗しました: {e}")
+
+
 def main():
     setting_dirs = src.settings.get_setting_dirs()
+    decision_logger = create_filter_decision_logger()
 
     for setting_dir in setting_dirs:
         email_account = src.emails.load_email_account(setting_dir)
@@ -38,10 +103,16 @@ def main():
                         folder = "Spam"
                         move_folder_dict.setdefault(
                             folder, []).append(email_id)
+                        log_filter_decision(
+                            decision_logger, setting_dir, email_id, folder, rule, email_data
+                        )
                     elif rule.action == "move":
                         folder = rule.move_to
                         move_folder_dict.setdefault(
                             folder, []).append(email_id)
+                        log_filter_decision(
+                            decision_logger, setting_dir, email_id, folder, rule, email_data
+                        )
                     break
 
         logger.info(f"移動フォルダ: {move_folder_dict}")
