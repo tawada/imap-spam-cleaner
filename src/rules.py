@@ -118,7 +118,7 @@ def export_sender(email: str) -> str:
     match = pattern.search(email)
     if match:
         # マッチした部分を返す
-        return match.group(1)
+        return match.group(1).strip()
     # マッチしなかった場合はそのまま返す
     return email
 
