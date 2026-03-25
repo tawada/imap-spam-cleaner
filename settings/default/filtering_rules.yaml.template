@@ -7,3 +7,9 @@
 - action: move
   move_to: sub
   subject_contains: invoice
+
+# 日付/時間フィルタの例
+# - action: deny
+#   older_than_days: 30
+# - action: deny
+#   time_range: "00:00-06:00"

@@ -1,5 +1,6 @@
 import os
 import re
+from email.utils import parsedate_to_datetime
 from typing import Literal
 
 import pydantic
@@ -15,6 +16,8 @@ class Rule(pydantic.BaseModel):
     sender_name: list[str] | str | None = None
     body_contains: str | None = None
     subject_contains: list[str] | str | None = None
+    older_than_days: int | None = None
+    time_range: str | None = None
 
     def validate(self) -> None:
         """Validate the rule."""
@@ -71,6 +74,42 @@ def match_rule(rule: Rule, email_data: dict) -> bool:
     if rule.subject_contains:
         subject = email_data.get("subject", "")
         if not contains_all_words(subject, rule.subject_contains):
+            return False
+
+    if rule.older_than_days is not None:
+        import datetime
+        date_str = email_data.get("date", "")
+        if date_str:
+            try:
+                email_date = parsedate_to_datetime(date_str)
+                now = datetime.datetime.now(datetime.timezone.utc)
+                if (now - email_date).days < rule.older_than_days:
+                    return False
+            except Exception:
+                return False
+        else:
+            return False
+
+    if rule.time_range:
+        import datetime
+        date_str = email_data.get("date", "")
+        if date_str:
+            try:
+                email_date = parsedate_to_datetime(date_str)
+                email_time = email_date.time()
+                start_str, end_str = rule.time_range.split("-")
+                start_time = datetime.time.fromisoformat(start_str.strip())
+                end_time = datetime.time.fromisoformat(end_str.strip())
+                if start_time <= end_time:
+                    if not (start_time <= email_time <= end_time):
+                        return False
+                else:
+                    # 日付をまたぐ場合 (例: 22:00-06:00)
+                    if not (email_time >= start_time or email_time <= end_time):
+                        return False
+            except Exception:
+                return False
+        else:
             return False
 
     if rule.body_contains:
