@@ -7,3 +7,10 @@
 - action: move
   move_to: sub
   subject_contains: invoice
+# ヘッダーフィルタの例
+# - action: move
+#   move_to: ml
+#   has_header: List-Id
+# - action: deny
+#   header_contains:
+#     X-Mailer: mass-mailer

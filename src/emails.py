@@ -123,6 +123,7 @@ class EmailClientIMAP(EmailClient):
                 "subject": subject,
                 "from": sender,
                 "date": date,
+                "_msg": msg,
             }
         except Exception as e:
             logger.debug(f"メール解析エラー: {e}")
@@ -261,6 +262,7 @@ class EmailClientPOP3(EmailClient):
                 "subject": subject,
                 "from": sender,
                 "date": date,
+                "_msg": msg,
             }
         except Exception as e:
             print(f"メール解析エラー: {e}")
