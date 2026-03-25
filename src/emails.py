@@ -111,17 +111,25 @@ class EmailClientIMAP(EmailClient):
             # 送信者を取得
             sender = msg.get("From", "")
 
+            # To, CCを取得
+            to = msg.get("To", "")
+            cc = msg.get("Cc", "")
+
             # 日付を取得
             date = msg.get("Date", "")
 
             # 結合文字列を除去
             subject = remove_combining_characters(subject)
             sender = remove_combining_characters(sender)
+            to = remove_combining_characters(to)
+            cc = remove_combining_characters(cc)
 
             return {
                 "id": msg_id,
                 "subject": subject,
                 "from": sender,
+                "to": to,
+                "cc": cc,
                 "date": date,
             }
         except Exception as e:
@@ -253,6 +261,10 @@ class EmailClientPOP3(EmailClient):
             # 送信者を取得
             sender = msg.get("From", "")
 
+            # To, CCを取得
+            to = msg.get("To", "")
+            cc = msg.get("Cc", "")
+
             # 日付を取得
             date = msg.get("Date", "")
 
@@ -260,6 +272,8 @@ class EmailClientPOP3(EmailClient):
                 "id": msg_id,
                 "subject": subject,
                 "from": sender,
+                "to": to,
+                "cc": cc,
                 "date": date,
             }
         except Exception as e:

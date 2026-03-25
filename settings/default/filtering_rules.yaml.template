@@ -7,3 +7,9 @@
 - action: move
   move_to: sub
   subject_contains: invoice
+# To/CCフィルタの例
+# - action: deny
+#   to_contains: undisclosed-recipients
+# - action: move
+#   move_to: ml
+#   cc_contains: dev-team@example.com
