@@ -7,3 +7,8 @@
 - action: move
   move_to: sub
   subject_contains: invoice
+# 正規表現フィルタの例
+# - action: deny
+#   sender_regex: "^no-?reply@"
+# - action: deny
+#   subject_regex: "\\[SPAM\\]"

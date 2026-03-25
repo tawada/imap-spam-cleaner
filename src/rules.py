@@ -15,6 +15,8 @@ class Rule(pydantic.BaseModel):
     sender_name: list[str] | str | None = None
     body_contains: str | None = None
     subject_contains: list[str] | str | None = None
+    sender_regex: str | None = None
+    subject_regex: str | None = None
 
     def validate(self) -> None:
         """Validate the rule."""
@@ -71,6 +73,16 @@ def match_rule(rule: Rule, email_data: dict) -> bool:
     if rule.subject_contains:
         subject = email_data.get("subject", "")
         if not contains_all_words(subject, rule.subject_contains):
+            return False
+
+    if rule.sender_regex:
+        sender = email_data.get("from", "")
+        if not re.search(rule.sender_regex, sender, re.IGNORECASE):
+            return False
+
+    if rule.subject_regex:
+        subject = email_data.get("subject", "")
+        if not re.search(rule.subject_regex, subject, re.IGNORECASE):
             return False
 
     if rule.body_contains:
