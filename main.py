@@ -100,10 +100,8 @@ def main():
             if not email_data:
                 logger.error(f"メールの詳細を取得できませんでした: {email_id}")
                 continue
-            matched = False
             for rule in rules:
                 if src.rules.match_rule(rule, email_data):
-                    matched = True
                     logger.info(f"ルールにマッチしました: {rule}:{email_data['subject']}")
                     if rule.action == "deny":
                         folder = "Spam"
@@ -119,17 +117,8 @@ def main():
                         log_filter_decision(
                             decision_logger, setting_dir, email_id, "move", folder, rule, email_data
                         )
-                    elif rule.action == "allow":
-                        log_filter_decision(
-                            decision_logger, setting_dir, email_id, "allow", "INBOX", rule, email_data
-                        )
                     action_counts[rule.action] = action_counts.get(rule.action, 0) + 1
                     break
-            if not matched:
-                log_filter_decision(
-                    decision_logger, setting_dir, email_id, "no_match", "INBOX", None, email_data
-                )
-                action_counts["no_match"] = action_counts.get("no_match", 0) + 1
 
         logger.info(f"移動フォルダ: {move_folder_dict}")
         logger.info(f"振り分け結果: {action_counts}")
