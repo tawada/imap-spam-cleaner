@@ -24,7 +24,7 @@ def create_filter_decision_logger() -> logging.Logger | None:
             encoding="utf-8",
         )
         formatter = logging.Formatter(
-            "%(asctime)s | setting=%(setting_dir)s | email_id=%(email_id)s | to=%(to_folder)s | reason=%(reason)s | subject=%(subject)s"
+            "%(asctime)s | setting=%(setting_dir)s | email_id=%(email_id)s | action=%(action)s | to=%(to_folder)s | from=%(sender)s | reason=%(reason)s | subject=%(subject)s"
         )
         handler.setFormatter(formatter)
         decision_logger.addHandler(handler)
@@ -48,8 +48,9 @@ def log_filter_decision(
     decision_logger: logging.Logger | None,
     setting_dir: str,
     email_id,
+    action: str,
     folder: str,
-    rule: src.rules.Rule,
+    rule,
     email_data: dict,
 ) -> None:
     if not decision_logger:
@@ -60,8 +61,10 @@ def log_filter_decision(
             extra={
                 "setting_dir": to_one_line(setting_dir),
                 "email_id": to_one_line(email_id),
+                "action": action,
                 "to_folder": to_one_line(folder),
-                "reason": to_one_line(rule),
+                "sender": to_one_line(email_data.get("from", "")),
+                "reason": to_one_line(rule) if rule else "",
                 "subject": to_one_line(email_data.get("subject", "")),
             },
         )
@@ -90,32 +93,46 @@ def main():
         # 移動フォルダとメールIDのdict
         move_folder_dict: dict[str, list[int]] = {}
         delete_email_ids = []
+        action_counts: dict[str, int] = {}
         # フィルタリングルールを適用して削除するメールを特定
         for email_id in emails:
             email_data = email_client.get_email_details(email_id)
             if not email_data:
                 logger.error(f"メールの詳細を取得できませんでした: {email_id}")
                 continue
+            matched = False
             for rule in rules:
                 if src.rules.match_rule(rule, email_data):
+                    matched = True
                     logger.info(f"ルールにマッチしました: {rule}:{email_data['subject']}")
                     if rule.action == "deny":
                         folder = "Spam"
                         move_folder_dict.setdefault(
                             folder, []).append(email_id)
                         log_filter_decision(
-                            decision_logger, setting_dir, email_id, folder, rule, email_data
+                            decision_logger, setting_dir, email_id, "deny", folder, rule, email_data
                         )
                     elif rule.action == "move":
                         folder = rule.move_to
                         move_folder_dict.setdefault(
                             folder, []).append(email_id)
                         log_filter_decision(
-                            decision_logger, setting_dir, email_id, folder, rule, email_data
+                            decision_logger, setting_dir, email_id, "move", folder, rule, email_data
                         )
+                    elif rule.action == "allow":
+                        log_filter_decision(
+                            decision_logger, setting_dir, email_id, "allow", "INBOX", rule, email_data
+                        )
+                    action_counts[rule.action] = action_counts.get(rule.action, 0) + 1
                     break
+            if not matched:
+                log_filter_decision(
+                    decision_logger, setting_dir, email_id, "no_match", "INBOX", None, email_data
+                )
+                action_counts["no_match"] = action_counts.get("no_match", 0) + 1
 
         logger.info(f"移動フォルダ: {move_folder_dict}")
+        logger.info(f"振り分け結果: {action_counts}")
 
         # メールを指定フォルダに移動
         for folder, email_ids in move_folder_dict.items():
