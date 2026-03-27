@@ -25,14 +25,9 @@ class Rule(pydantic.BaseModel):
 
     def __str__(self) -> str:
         """String representation of the rule."""
-        # Noneのattrは表示しない
-        attrs = self.__dict__.copy()
-        attrs = {k: v for k, v in attrs.items() if v is not None}
-        # class名を取得
+        attrs = self.model_dump(exclude_none=True)
         class_name = self.__class__.__name__
-        # attrsを文字列に変換
         attrs_str = ", ".join(f"{k}={v}" for k, v in attrs.items())
-        # 文字列を返す
         return f"{class_name}({attrs_str})"
 
 
