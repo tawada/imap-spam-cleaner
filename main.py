@@ -117,7 +117,8 @@ def main():
                         log_filter_decision(
                             decision_logger, setting_dir, email_id, "move", folder, rule, email_data
                         )
-                    action_counts[rule.action] = action_counts.get(rule.action, 0) + 1
+                    action_counts[rule.action] = action_counts.get(
+                        rule.action, 0) + 1
                     break
 
         logger.info(f"移動フォルダ: {move_folder_dict}")
